@@ -1,0 +1,40 @@
+[Workflow],,,,,,,,,,
+Id:,notes_workflow,,,,,,,,,
+Title:,Notes workflow,,,,,,,,,
+Description:,Workflow pour les notess de R et D,,,,,,,,,
+Initial state:,draft,,,,,,,,,
+,,,,,,,,,,
+[State],,,,,,,,,,
+Id:,draft,,,,,,,,,
+Title:,Brouillon,,,,,,,,,
+Description:,Notes en cours,,,,,,,,,
+Transitions,submit,,,,,,,,,
+Permissions,Acquire,Anonymous,Authenticated,Member,Manager,Owner,Editor,Reader,Contributor,Reviewer
+View,N,,,,X,X,X,X,X,X
+Access contents information,N,,,,X,X,X,X,X,X
+Modify portal content,N,,,,X,X,X,,,X
+,,,,,,,,,,
+[State],,,,,,,,,,
+Id:,published,,,,,,,,,
+Title:,Publie,,,,,,,,,
+Description:,The proposal has been accepted,,,,,,,,,
+Transitions:,reject,,,,,,,,,
+Permissions,Acquire,Anonymous,Authenticated,Member,Manager,Owner,Editor,Reader,Contributor,Reviewer
+View,N,,,,X,,X,X,X,X
+Access contents information,N,,,,X,,X,X,X,X
+Modify portal content,N,,,,X,,,,,
+,,,,,,,,,,
+[Transition],,,,,,,,,,
+Id:,retract,,,,,,,,,
+Title:,Retirer,,,,,,,,,
+Description:,Retrait des notes par R et D (a completer),,,,,,,,,
+Target state:,draft,,,,,,,,,
+Guard permission:,Review portal content,,,,,,,,,
+,,,,,,,,,,
+[Transition],,,,,,,,,,
+Id:,publish,,,,,,,,,
+Title:,Publier,,,,,,,,,
+Description:,Publication du notes,,,,,,,,,
+Target state:,published,,,,,,,,,
+Guard permission:,Review portal content,,,,,,,,,
+Script after:,ageliaco.rd.Extentions.transitionscripts.notesFeedback,,,,,,,,,

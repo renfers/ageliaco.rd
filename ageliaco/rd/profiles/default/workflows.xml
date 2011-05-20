@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<object name="portal_workflow">
+    <bindings>
+        <type type_id="ageliaco.rd.projet">
+            <bound-workflow workflow_id="projet_workflow"/>
+        </type>
+        <type type_id="ageliaco.rd.project">
+            <bound-workflow workflow_id="projet_workflow"/>
+        </type>
+        <type type_id="ageliaco.rd.cycles">
+            <bound-workflow workflow_id="cycles_workflow"/>
+        </type>
+        <type type_id="ageliaco.rd.cycle">
+            <bound-workflow workflow_id="cycle_workflow"/>
+        </type>
+        <type type_id="ageliaco.rd.attributions">
+            <bound-workflow workflow_id="attributions_workflow"/>
+        </type>
+        <type type_id="ageliaco.rd.attribution">
+            <bound-workflow workflow_id="attribution_workflow"/>
+        </type>
+        <type type_id="ageliaco.rd.bilan">
+            <bound-workflow workflow_id="bilan_workflow"/>
+        </type>
+        <type type_id="ageliaco.rd.notes">
+            <bound-workflow workflow_id="notes_workflow"/>
+        </type>
+    </bindings>
+</object>
