@@ -1,5 +1,5 @@
 [Workflow],,,,,,,,,,
-Id:,cycles_workflow,,,,,,,,,
+Id:,cycles-workflow,,,,,,,,,
 Title:,Cycles workflow,,,,,,,,,
 Description:,Workflow pour le dossier des cycles d administration de R et D,,,,,,,,,
 Initial state:,on,,,,,,,,,

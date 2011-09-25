@@ -1,5 +1,5 @@
 [Workflow],,,,,,,,,,
-Id:,cycle_workflow,,,,,,,,,
+Id:,cycle-workflow,,,,,,,,,
 Title:,Cycle workflow,,,,,,,,,
 Description:,Workflow pour les cycles d administration de projets de R et D,,,,,,,,,
 Initial state:,draft,,,,,,,,,

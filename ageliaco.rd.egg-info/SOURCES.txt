@@ -12,6 +12,7 @@ ageliaco.rd.egg-info/paster_plugins.txt
 ageliaco.rd.egg-info/requires.txt
 ageliaco.rd.egg-info/top_level.txt
 ageliaco/rd/__init__.py
+ageliaco/rd/setuphandlers.py
 ageliaco/rd/tests.py
 ageliaco/rd/behavior/__init__.py
 ageliaco/rd/behavior/behaviors.py

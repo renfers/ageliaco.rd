@@ -15,6 +15,7 @@
 
     <!-- Register an extension profile to make the product installable -->
   <include package=".behavior" />
+  <include file="profiles.zcml" />
 
   <genericsetup:registerProfile
       name="default"

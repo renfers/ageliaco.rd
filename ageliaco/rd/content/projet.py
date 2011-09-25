@@ -184,6 +184,9 @@ from plone.directives import form, dexterity
 
 from ageliaco.rd import _
 
+# for debug purpose => log(...)
+from Products.CMFPlone.utils import log
+
 from plone.app.textfield import RichText
 #from plone.app.z3cform.wysiwyg import WysiwygFieldWidget
 from zope.lifecycleevent.interfaces import IObjectModifiedEvent
@@ -196,11 +199,51 @@ from zope.app.container.interfaces import IObjectAddedEvent
 from Products.CMFCore.utils import getToolByName
 
 from plone.formwidget.autocomplete import AutocompleteMultiFieldWidget
+from plone.z3cform.textlines import TextLinesFieldWidget
+
 from zope.interface import invariant, Invalid
 
 from plone.app.textfield.value import RichTextValue
 from collective.gtags.field import Tags
 from AccessControl.interfaces import IRoleManager
+from DateTime import DateTime
+from plone.indexer import indexer
+import datetime
+
+from zope.schema.interfaces import IVocabularyFactory
+
+from Acquisition import aq_inner, aq_parent
+from Products.CMFCore.utils import getToolByName
+from cycle import ICycle
+
+
+class ProfsVocabulary(object):
+    grok.implements(IVocabularyFactory)
+    
+    def __call__(self, context):
+        acl_users = getToolByName(context, 'acl_users')
+        membership = getToolByName(context, 'portal_membership') 
+        
+        terms = []
+        users = acl_users.getUserNames()
+        if users is not None:
+            for member_id in users:
+                user = acl_users.getUserById(member_id)
+                if user is not None:
+                    member_name = user.getProperty('fullname') or member_id
+                    terms.append(SimpleVocabulary.createTerm(member_id, str(member_id), member_name))
+                else:
+                    user = membership.getMemberById(member_id)
+                    if user is not None:
+                        member_name = user.getProperty('fullname') or member_id
+                        terms.append(SimpleVocabulary.createTerm(member_id, str(member_id), member_name))
+                    else:
+                        member_name = member_id
+                        terms.append(SimpleVocabulary.createTerm(member_id, str(member_id), member_name))
+                        
+        return SimpleVocabulary(terms)
+
+grok.global_utility(ProfsVocabulary, name=u"ageliaco.rd.Profs")
 
 class GroupMembers(object):
     """Context source binder to provide a vocabulary of users in a given
@@ -248,7 +291,8 @@ class IProjet(form.Schema):
             required=True,
         )    
         
-    form.widget(contributor=AutocompleteMultiFieldWidget)
+    #form.widget(contributor=AutocompleteMultiFieldWidget)
+    form.widget(contributor=TextLinesFieldWidget) 
     contributor = schema.List(
             title=_(u"Contributeurs"),
             default=[],
@@ -258,6 +302,48 @@ class IProjet(form.Schema):
     subject = Tags(
             title=_(u"Domaines")
             )
+
+
+class View(grok.View):
+    grok.context(IProjet)
+    grok.require('zope2.View')
+    
+    def cycles(self):
+        """Return a catalog search result of issues to show
+        """
+        
+        context = aq_inner(self.context)
+        #catalog = getToolByName(self.context, 'portal_catalog')
+        #object = context
+        #return catalog(object_provides= ICycle.__identifier__,
+        #               path={'query': '/'.join(context.getPhysicalPath()), 'depth': 1},
+        #               sort_on="modified", sort_order="reverse")        
+        print context.id
+        admin = 'admin_' + context.id
+        if admin in context.objectIds():
+            administration = context[admin]
+            for cycle in administration.objectValues():
+                print cycle.title_or_id()
+                print dir(cycle)
+            return administration.objectValues()
+        return []
+
+@indexer(IProjet)
+def startIndexer(obj):
+    if obj.start is None:
+        return None
+    adate = datetime.date(int(obj.start.split('-')[0]),9,1)
+    return DateTime(adate.isoformat())
+grok.global_adapter(startIndexer, name="start")
+
+@indexer(IProjet)
+def endIndexer(obj):
+    if obj.duration is None:
+        return None
+    adate = datetime.date(int(obj.start.split('-')[0])+obj.duration,9,1)
+    return DateTime(adate.isoformat())
+grok.global_adapter(endIndexer, name="end")
+
 
 
 @form.default_value(field=IProjet['start'])

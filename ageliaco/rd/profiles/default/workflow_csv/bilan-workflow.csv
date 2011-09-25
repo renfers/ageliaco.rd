@@ -1,5 +1,5 @@
 [Workflow],,,,,,,,,,
-Id:,bilan_workflow,,,,,,,,,
+Id:,bilan-workflow,,,,,,,,,
 Title:,Bilan workflow,,,,,,,,,
 Description:,Workflow pour les bilans de R et D,,,,,,,,,
 Initial state:,draft,,,,,,,,,

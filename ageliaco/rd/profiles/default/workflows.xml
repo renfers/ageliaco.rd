@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <object name="portal-workflow">
     <bindings>
-        <type type_id="ageliaco.rd.projet">
-            <bound-workflow workflow_id="projet-workflow"/>
+        <type type_id="ageliaco.rd.projets">
+            <bound-workflow workflow_id="projets-workflow"/>
         </type>
         <type type_id="ageliaco.rd.project">
             <bound-workflow workflow_id="projet-workflow"/>
@@ -22,8 +22,8 @@
         <type type_id="ageliaco.rd.bilan">
             <bound-workflow workflow_id="bilan-workflow"/>
         </type>
-        <type type_id="ageliaco.rd.notes">
-            <bound-workflow workflow_id="notes-workflow"/>
+        <type type_id="ageliaco.rd.note">
+            <bound-workflow workflow_id="note-workflow"/>
         </type>
     </bindings>
 </object>
