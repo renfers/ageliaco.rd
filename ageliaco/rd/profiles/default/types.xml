@@ -15,4 +15,5 @@
   <object name="ageliaco.rd.cycles" meta_type="Dexterity FTI" />
   <object name="ageliaco.rd.cycle" meta_type="Dexterity FTI" />
   <object name="ageliaco.rd.attribution" meta_type="Dexterity FTI" />
+  <object name="ageliaco.rd.auteur" meta_type="Dexterity FTI" />
 </object>

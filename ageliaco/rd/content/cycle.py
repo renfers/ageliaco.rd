@@ -17,6 +17,10 @@ from ageliaco.rd import _
 
 import datetime
 
+# for debug purpose => log(...)
+from Products.CMFPlone.utils import log
+
+
 from zope.schema.interfaces import IContextSourceBinder
 from zope.schema.vocabulary import SimpleVocabulary
 from zope.lifecycleevent.interfaces import IObjectCreatedEvent
@@ -29,6 +33,10 @@ from zope.interface import invariant, Invalid
 from Acquisition import aq_inner, aq_parent
 from zope.component import getUtility
 from Products.CMFCore.interfaces import ISiteRoot
+from zope.security import checkPermission
+
+
+from auteur import IAuteur
 
 class TwiceSameSupevisor(Invalid):
     __doc__ = _(u"Choisir un autre superviseur secondaire ou primaire!")
@@ -132,13 +140,14 @@ class ICycle(form.Schema):
             description=_(u"L'année d'administration du projet"),
             required=True,
         )
-        
+
     form.widget(contributor=AutocompleteMultiFieldWidget)
     contributor = schema.List(
             title=_(u"Contributeurs"),
             value_type=schema.Choice(vocabulary=u"plone.principalsource.Users",),    
             required=False,
         )
+
             
     dexterity.write_permission(supervisor='cmf.ReviewPortalContent')
     supervisor = schema.Choice(
@@ -147,152 +156,245 @@ class ICycle(form.Schema):
             source=GroupMembers('superviseur'),
             required=False,
         )
-    dexterity.write_permission(supervisor2='cmf.ReviewPortalContent')
-    supervisor2 = schema.Choice(
-            title=_(u"Superviseur secondaire"),
-            description=_(u"Personne qui épaule le premier superviseur"),
-            source=GroupMembers('superviseur'),
+
+    problematique = RichText(
+            title=_(u"Problématique"),
+            description=_(u"Problématique et contexte du projet pour l'année à venir"),
             required=False,
-        )
-
-    @invariant
-    def validateSupervisorSupervisor2(data):
-        if data.supervisor is not None and data.supervisor2 is not None:
-            if data.supervisor == data.supervisor2:
-                raise TwiceSameSupevisor(_(u"Le superviseur secondaire doit être différent du premier!"))
-    
-
-    presentation = RichText(
-            title=_(u"Présentation"),
-            description=_(u"Enjeux et objectifs du projet pour l'année"),
-            required=True,
+        )    
+        
+    objectifs = RichText(
+            title=_(u"Objectifs"),
+            description=_(u"Objectifs du projet pour l'année"),
+            required=False,
         )    
 
-    def applyChanges(self, data):
-        """
-        Reflect confirmed status to Archetypes schema.
-    
-        @param data: Dictionary of cleaned form data, keyed by field
-        """
-        
-    
-        # This is the context given to the form when the form object was constructed
-        cycle = self.context
-    
-        assert ICycle.providedBy(cycle) # safety check
-    
-        # Call archetypes field mutator to store the value on the patient object
-        cycle.setContributors(tuple(data["contributor"]))
-        print "Apply Changes : ", data["contributor"]
+    resultats = RichText(
+            title=_(u"Résultats"),
+            description=_(u"Retombées (profs et/ou élèves) du projet pour l'année"),
+            required=False,
+        )    
 
+    moyens = RichText(
+            title=_(u"Moyens"),
+            description=_(u"Moyens nécessaires pour l'année"),
+            required=False,
+        )    
 
-
-class Cycle(object):
-    """Cycle
-    """
-    
-    grok.implements(ICycle)
-    def __init__(self):
-        self.contributor = self.aq_inner.aq_parent.contributor
-        print "creation cycle : ",self.aq_inner.aq_parent.contributor
-        
-
-
-@form.default_value(field=ICycle['contributor'])
-def contributorDefaultValue(data):
-    # To get hold of the folder, do: context = data.context
-    context = data.context
-    terms = []
-    contributors = []
-    folder = data.context
-    print folder.keys()
-    last_year = str(datetime.datetime.today().year - 1)
-
-    portal_url = getToolByName(folder, 'portal_url')
-    acl_users = getToolByName(context, 'acl_users')
-    
-    portal = portal_url.getPortalObject() 
-    parent = folder.aq_inner
-    grandparent = parent.aq_parent
-    print grandparent.contributors
-
-    try: #looking for preceding cycle
-        last_cycle = folder[last_year]
-        contributors = last_cycle.contributors
-    except : #no cycle before, let's find the project's contributors
-        try:
-            
-            contributors = grandparent.contributors
-        except:
-            print "bad, bad, ...", folder, parent, parent.aq_parent
-    #print dir(data)  
-    #print dir(context)
-    context.setContributors(contributors)
-    context.contributors = contributors
-    print "context.contributors = ", context.contributors
-    #data.set(context.contributors)
-    #data["contributor"] = list(context.contributors)
-    print data.field.setTaggedValue.__doc__
-    
-    if len(context.contributors):
-        data.field.setTaggedValue(context.contributors[0],context.contributors[0])
-    return list(context.contributors)
-    
 @grok.subscribe(ICycle, IObjectAddedEvent)
 @grok.subscribe(ICycle, IObjectModifiedEvent)
-def setDublin(cycle, event):
-    print dir(event)
-    print cycle.title
-
-    #portal = getUtility(ISiteRoot)
-    #acl_users = getToolByName(portal, 'acl_users')
+def setAuteurs(cycle, event):
+    portal_url = getToolByName(cycle, 'portal_url')
     acl_users = getToolByName(cycle, 'acl_users')
     
-    #cycle.setContributors(cycle.contributors)
-    #cycle.setId = str(datetime.datetime.today().year)
-    #cycle.contributors += cycle.initalcontributors
-    print "cycle.contributor : ", cycle.contributor
-    cycle.setContributors(cycle.contributor)
+    portal = portal_url.getPortalObject() 
+    cycles = cycle.aq_parent
     
-    # attribution creation - one per contributor
-    for author in cycle.contributor:
+    #set title
+    cycle.title = cycle.id
     
-        id = 'attribution_%s'%author
+    for auteur in cycle.contributor:
+        print auteur
         try:
-            attribution = cycle[id]
-        except: 
-            user = acl_users.getUserById(author)
-            if user:
-                fullname = user.getProperty(u'fullname') or auteur
-                school = user.getProperty(u'title') or u'N/A'
-                print school
-                if school in schools.keys():
-                    sector = schools[school][1]
-                else:
-                    sector = u'non disponible'
-                
-                cycle.invokeFactory("ageliaco.rd.attribution", 
-                                id=id, 
-                                title='Attribution %s'%fullname, 
-                                contributor=author, 
-                                school=school,
-                                sector=sector,
-                                hour = 0.0,
-                                hourRD = 0.0,
-                                hourFinal = 0.0
-                                )
-                attribution = cycle[id]
-                attribution.indexObject()
-                #Attribution(attribution).set(author,school)
-            else:
-                print "User %s not found! Attribution not created "%author
-    return cycle.contributors
+            author = cycles[auteur]
+        except KeyError: 
+            cycles.invokeFactory("ageliaco.rd.auteur", id=auteur, title=auteur)
+            author = cycles[auteur]
+    
+    #projet.setContributors(projet.contributor)
+    return #projet.request.response.redirect(cycles.absolute_url() + '++add++ageliaco.rd.cycle')
+
+class View(dexterity.DisplayForm):
+    grok.context(ICycle)
+    grok.require('zope2.View')
+    
+    def canRequestReview(self):
+        return checkPermission('cmf.RequestReview', self.context)
+        
+    def canAddContent(self):
+        return checkPermission('cmf.AddPortalContent', self.context)
+        
+    def canModifyContent(self):
+        return checkPermission('cmf.ModifyPortalContent', self.context)
+        
+        
+        
+    def auteurs(self):
+        context = aq_inner(self.context)
+        parent = context.aq_parent
+        
+        catalog = getToolByName(self.context, 'portal_catalog')
+        log( 'parent path : ' + parent.absolute_url())
+        
+        return catalog(object_provides=[IAuteur.__identifier__],
+                       path={'query': '/'.join(parent.getPhysicalPath()), 'depth': 1},
+                       sort_on='sortable_title')
+        
+    def contributeur(self,auteur):
+        context = aq_inner(self.context)
+        parent = context.aq_parent
+        
+        log( context.contributor)
+        if auteur in parent.keys():
+            return parent[auteur]
+        return None
+        
+    
+    def parent_url(self):
+        context = aq_inner(self.context)
+        parent = context.aq_parent
+        print parent.absolute_url()
+        return parent.absolute_url()
+    
+    def setaddress(self):
+        for c in self.w.keys():
+            print "champ : %s => %s" % (c,self.w[c])
+        
+        context = aq_inner(self.context)
+
+        print context.keys()
+        
+
+#     dexterity.write_permission(supervisor2='cmf.ReviewPortalContent')
+#     supervisor2 = schema.Choice(
+#             title=_(u"Superviseur secondaire"),
+#             description=_(u"Personne qui épaule le premier superviseur"),
+#             source=GroupMembers('superviseur'),
+#             required=False,
+#         )
+
+#     @invariant
+#     def validateSupervisorSupervisor2(data):
+#         if data.supervisor is not None and data.supervisor2 is not None:
+#             if data.supervisor == data.supervisor2:
+#                 raise TwiceSameSupevisor(_(u"Le superviseur secondaire doit être différent du premier!"))
+#     
+#     def applyChanges(self, data):
+#         """
+#         Reflect confirmed status to Archetypes schema.
+#     
+#         @param data: Dictionary of cleaned form data, keyed by field
+#         """
+#         
+#     
+#         # This is the context given to the form when the form object was constructed
+#         cycle = self.context
+#     
+#         assert ICycle.providedBy(cycle) # safety check
+#     
+#         # Call archetypes field mutator to store the value on the patient object
+#         cycle.setContributors(tuple(data["contributor"]))
+#         print "Apply Changes : ", data["contributor"]
+
+
+
+# class Cycle(object):
+#     """Cycle
+#     """
+#     
+#     grok.implements(ICycle)
+#     def __init__(self):
+#         self.contributor = self.aq_inner.aq_parent.contributor
+#         print "creation cycle : ",self.aq_inner.aq_parent.contributor
+        
+
+
+# @form.default_value(field=ICycle['contributor'])
+# def contributorDefaultValue(data):
+#     # To get hold of the folder, do: context = data.context
+#     context = data.context
+#     terms = []
+#     contributors = []
+#     folder = data.context
+#     print folder.keys()
+#     last_year = str(datetime.datetime.today().year - 1)
+# 
+#     portal_url = getToolByName(folder, 'portal_url')
+#     acl_users = getToolByName(context, 'acl_users')
+#     
+#     portal = portal_url.getPortalObject() 
+#     parent = folder.aq_inner
+#     grandparent = parent.aq_parent
+#     print grandparent.contributors
+# 
+#     try: #looking for preceding cycle
+#         last_cycle = folder[last_year]
+#         contributors = last_cycle.contributors
+#     except : #no cycle before, let's find the project's contributors
+#         try:
+#             
+#             contributors = grandparent.contributors
+#         except:
+#             print "bad, bad, ...", folder, parent, parent.aq_parent
+#     #print dir(data)  
+#     #print dir(context)
+#     context.setContributors(contributors)
+#     context.contributors = contributors
+#     print "context.contributors = ", context.contributors
+#     #data.set(context.contributors)
+#     #data["contributor"] = list(context.contributors)
+#     print data.field.setTaggedValue.__doc__
+#     
+#     if len(context.contributors):
+#         data.field.setTaggedValue(context.contributors[0],context.contributors[0])
+#     return list(context.contributors)
+#     
+# @grok.subscribe(ICycle, IObjectAddedEvent)
+# @grok.subscribe(ICycle, IObjectModifiedEvent)
+# def setDublin(cycle, event):
+#     print dir(event)
+#     print cycle.title
+# 
+#     #portal = getUtility(ISiteRoot)
+#     #acl_users = getToolByName(portal, 'acl_users')
+#     acl_users = getToolByName(cycle, 'acl_users')
+#     
+#     #cycle.setContributors(cycle.contributors)
+#     #cycle.setId = str(datetime.datetime.today().year)
+#     #cycle.contributors += cycle.initalcontributors
+#     print "cycle.contributor : ", cycle.contributor
+#     cycle.setContributors(cycle.contributor)
+#     
+#     # attribution creation - one per contributor
+#     for author in cycle.contributor:
+#     
+#         id = 'attribution_%s'%author
+#         try:
+#             attribution = cycle[id]
+#         except: 
+#             user = acl_users.getUserById(author)
+#             if user:
+#                 fullname = user.getProperty(u'fullname') or auteur
+#                 school = user.getProperty(u'title') or u'N/A'
+#                 print school
+#                 if school in schools.keys():
+#                     sector = schools[school][1]
+#                 else:
+#                     sector = u'non disponible'
+#                 
+#                 cycle.invokeFactory("ageliaco.rd.attribution", 
+#                                 id=id, 
+#                                 title='Attribution %s'%fullname, 
+#                                 contributor=author, 
+#                                 school=school,
+#                                 sector=sector,
+#                                 hour = 0.0,
+#                                 hourRD = 0.0,
+#                                 hourFinal = 0.0
+#                                 )
+#                 attribution = cycle[id]
+#                 attribution.indexObject()
+#                 #Attribution(attribution).set(author,school)
+#             else:
+#                 print "User %s not found! Attribution not created "%author
+#     return cycle.contributors
 
 
 @form.default_value(field=ICycle['id'])
 def idDefaultValue(data):
     # To get hold of the folder, do: context = data.context
     return str(datetime.datetime.today().year)
+
 
     
 # @grok.subscribe(ICycle, IObjectModifiedEvent)
@@ -315,23 +417,23 @@ def idDefaultValue(data):
 # 
 #     return
 
-class AddForm(grok.AddForm):
-    grok.context(ICycles)
-    grok.name('Cycle')
-    #form_fields = grok.AutoFields(Cycles)
-    label = u"Création de cycles annuels d'administration"
-    grok.require('zope2.View')
-    
-    @grok.action(u"Ajout d'un cycle")
-    def add(self, **data):
-        cycle = Cycle()
-        nb_cycles = len(self.context)
-        projet = self.context.ac_parent
-        cycle.year = str(datetime.datetime.today().year)
-        cycle.id = cycle.year
-        if nb_cycle == 0:
-            cycle.title = u"Initial"
-            cycle.contributors = projet.contributors
-        #else :
-        self.context[cycle.id] = cycle
-        return self.redirect(self.url(self.context[cycle.id]))
+# class AddForm(grok.AddForm):
+#     grok.context(ICycles)
+#     grok.name('Cycle')
+#     #form_fields = grok.AutoFields(Cycles)
+#     label = u"Création de cycles annuels d'administration"
+#     grok.require('zope2.View')
+#     
+#     @grok.action(u"Ajout d'un cycle")
+#     def add(self, **data):
+#         cycle = Cycle()
+#         nb_cycles = len(self.context)
+#         projet = self.context.ac_parent
+#         cycle.year = str(datetime.datetime.today().year)
+#         cycle.id = cycle.year
+#         if nb_cycle == 0:
+#             cycle.title = u"Initial"
+#             cycle.contributors = projet.contributors
+#         #else :
+#         self.context[cycle.id] = cycle
+#         return self.redirect(self.url(self.context[cycle.id]))

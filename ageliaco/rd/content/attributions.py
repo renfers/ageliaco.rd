@@ -29,6 +29,8 @@ from z3c.form.object import registerFactoryAdapter
 from copy import deepcopy
 
 
+
+
 class GroupMembers(object):
     """Context source binder to provide a vocabulary of users in a given
     group.

@@ -3,4 +3,6 @@ plone.app.dexterity
 collective.autopermission
 Plone
 plone.principalsource
+plone.app.users >= 1.0b7
 collective.wtf
+ageliaco.p10userdata

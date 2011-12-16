@@ -7,7 +7,7 @@
   <property name="title" i18n:translate="">projet</property>
   <property name="description"
     i18n:translate="">Projet RD</property>
-  <property name="content_icon">folder_icon.gif</property>
+  <property name="content_icon">++resource++ageliaco.rd/SitesFolderIcon.png</property>
   <property name="global_allow">True</property>
   <property name="filter_content_types">True</property>  
   <property name="allowed_content_types" >
