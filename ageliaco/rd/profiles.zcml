@@ -1,0 +1,30 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup">
+
+  <!-- Register the installation GenericSetup extension profile -->
+  <genericsetup:registerProfile
+      name="default"
+      title="ageliaco.rd"
+      directory="profiles/default"
+      description=""
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <!-- Register the import step -->
+  <genericsetup:importStep
+      name="ageliaco.rd"
+      title="ageliaco.rd special import handlers"
+      description=""
+      handler="ageliaco.rd.setuphandlers.import_various" />
+
+  <!-- Register the upgrade step -->
+  <genericsetup:upgradeStep
+      title="Add catalog indexes"
+      description=""
+      source="1000"
+      destination="1001"
+      handler="ageliaco.rd.setuphandlers.add_catalog_indexes"
+      profile="ageliaco.rd:default" />
+
+</configure>

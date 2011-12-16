@@ -1,0 +1,180 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal"
+      xmlns:metal="http://xml.zope.org/namespaces/metal"
+      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+      lang="en"
+      metal:use-macro="context/main_template/macros/master"
+      i18n:domain="ageliaco.rd">
+<head>
+    <metal:block fill-slot="style_slot">
+        <link rel="stylesheet" type="text/css" 
+            tal:define="navroot context/@@plone_portal_state/navigation_root_url"
+            tal:attributes="href string:${navroot}/++resource++ageliaco.rd/projet.css"
+            />
+    </metal:block>
+    <metal:block fill-slot="javascript_head_slot" tal:define="navroot context/@@plone_portal_state/navigation_root_url">
+        <script type="text/javascript"  tal:define="navroot context/@@plone_portal_state/navigation_root_url"
+            tal:attributes="src string:${navroot}/++resource++ageliaco.rd/projet.js"
+            src="jquery.jqDock.min.js">
+
+        </script>
+	<!-- include the Tools -->
+    </metal:block>
+</head>
+<body>
+
+<metal:main fill-slot="main">
+    <tal:main-macro metal:define-macro="main"
+        tal:define="toLocalizedTime nocall:context/@@plone/toLocalizedTime;
+                navroot context/@@plone_portal_state/navigation_root_url">
+
+        <div tal:replace="structure provider:plone.abovecontenttitle" />
+
+        <h1 class="documentFirstHeading" tal:content="context/title" />
+        
+        
+        <div tal:define="administration python: 'admin_' + context.id" 
+                tal:condition="python:view.canAddContent() and not len(context[administration])"                   
+            >
+            <a tal:attributes="href python:context.absolute_url() + '/' + administration + '/++add++ageliaco.rd.cycle'"
+            style="background : yellow">
+            Compléter le projet !
+            <img style="width : 100px"
+                tal:attributes="src string:${navroot}/++resource++ageliaco.rd/tux-chantier.png"/></a>
+        </div>
+       <div tal:define="realisation python: 'realisation'" 
+                tal:condition="python:context.has_key(realisation) and not len(context[realisation])"                   
+            >
+            <a tal:define="rea python:context['realisation']"
+               tal:condition="python: view.canAddContent() or view.canReviewContent()"                
+               tal:attributes="href python:context.absolute_url() + '/realisation'"
+               tal:content="rea/Title"
+            style="float : right">
+            Compléter le projet !</a>
+        </div>
+
+<!-- <div tal:content="python: dir(context)"/>-->
+
+<ul class="css-tabs">
+        <li><a id="t1" href="#player_tab">Présentation</a></li>
+        <tal:block repeat="cycle view/cycles_obj" condition="not: here/portal_membership/isAnonymousUser">
+        <li  
+            tal:define="turn repeat/cycle/number"
+            tal:condition="view/canRequestReview"
+                >
+            <a tal:content="python:cycle.id" 
+            tal:attributes="id python:str(int(turn) + 1)"
+
+            href="#">cycle</a></li>
+        </tal:block>
+</ul>
+<!-- panes -->
+<div  class="css-panes">
+
+	<!-- remove the space between tabs and panes <br clear="all" /> -->
+	
+
+	<div class="single" tal:define="has_logo python:'logo-projet.png' in context.objectIds()"	
+	>
+
+		<p class="documentDescription" 
+		    tal:content="context/description" />
+		<img tal:condition="has_logo" tal:attributes="src  python:context['logo-projet.png'].absolute_url()  or  navroot + '/++resource++ageliaco.rd/screens.png'" 
+		    src="http://static.flowplayer.org/img/title/screens.png" alt="Flying screens" style="float:left;margin:0 30px 30px 0; width : 200px" />
+		<img tal:condition="not:has_logo" tal:attributes="src  python:navroot + '/++resource++ageliaco.rd/screens.png'" 
+		    src="http://static.flowplayer.org/img/title/screens.png" alt="Flying screens" style="float:left;margin:0 30px 30px 0; width : 200px" />
+
+        <span tal:content="structure context/presentation/output" />
+        
+        <span class="discreet">
+            <tal:block condition="context/start">
+                <span i18n:translate="label_from">Depuis </span>
+                <span tal:content="python:context.start" />
+            </tal:block>
+            <tal:block condition="context/duration">
+                <span i18n:translate="label_to">pour </span>
+                <span tal:content="python:context.duration" />
+                an(s)
+            </tal:block>
+        </span>
+    <!--  
+        <div tal:replace="structure provider:plone.belowcontenttitle" />
+
+     
+        <div tal:replace="structure provider:plone.abovecontentbody" />
+          -->
+        
+    </div>
+    <tal:block  repeat="cycle view/cycles_obj">
+        <div class="single">
+	<a tal:condition="python:view.canModifyContent() or view.canRequestReview()" 
+	    tal:attributes="href python: cycle.absolute_url()"
+	    style="float:right">Accéder</a>
+<ul  >
+	<tal:block repeat="auteur cycle/contributor">
+	<li   class="auteur"> <span class="genericButton" ><a class='editAuteur'  tal:condition="view/canModifyContent" 
+	        tal:content="auteur" 
+	        tal:attributes="href python:view.admin_url() + '/' + auteur + '/edit'" href="#">
+	        Auteur id
+        </a></span>
+        <span tal:define="contributeur python:view.contributeur(auteur)" tal:condition="contributeur">
+            <p ><span tal:replace="contributeur/firstname"/> <span tal:replace="contributeur/lastname"/>
+            <span tal:replace="contributeur/email"/></p>
+        </span>
+    </li>
+
+
+	</tal:block>
+</ul>
+    <!--<span style="float:right">
+        	<img tal:attributes="src string:${navroot}/++resource++ageliaco.rd/eye192.png" 
+		    src="http://static.flowplayer.org/img/title/screens.png" alt="Flying screens" style="float:right;margin:0 30px 30px 0" />
+    </span>
+        -->
+        <span >
+<span id="accordion">
+	<h2 class="current">Problématique</h2>
+	<span class="pane" style="display:block"
+	    tal:content="structure cycle/problematique/output | nothing"/>
+	<h2>Objectifs</h2>
+	<span class="pane" tal:content="structure cycle/objectifs/output | nothing"/>
+	<h2>Résultats</h2>
+	<span class="pane" tal:content="structure cycle/resultats/output | nothing"/>
+	<h2>Moyens</h2>
+	<span class="pane" tal:content="structure cycle/moyens/output | nothing"/>
+</span>
+    </span>
+<!--
+    <h2  i18n:translate="heading_problematique">Problématique</h2>    
+        <span tal:content="structure cycle/problematique/output" />
+    <h2  i18n:translate="heading_objectifs">Objectifs</h2>
+        <span tal:content="structure cycle/objectifs/output" />
+    <h2  i18n:translate="heading_resultats">Résultats</h2>
+        <span tal:content="structure cycle/resultats/output" />
+    <h2  i18n:translate="heading_moyens">Moyens</h2>
+        <span tal:content="structure cycle/moyens/output" />
+-->        
+        </div>
+        
+    </tal:block>
+</div>
+        
+<!-- activate tabs with JavaScript -->
+<script>
+$(function() {
+	$("ul.css-tabs").tabs("div.css-panes > div");
+});
+</script>	
+<script>
+    
+    $("#accordion").tabs("#accordion span.pane", {tabs: 'h2', effect: 'slide', initialIndex: 0});
+</script>	
+        
+
+        <div tal:replace="structure provider:plone.belowcontentbody" />
+
+    </tal:main-macro>
+</metal:main>
+
+</body>
+</html>

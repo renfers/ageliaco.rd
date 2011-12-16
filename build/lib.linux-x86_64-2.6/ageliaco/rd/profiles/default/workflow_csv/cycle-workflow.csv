@@ -1,0 +1,113 @@
+[Workflow],,,,,,,,,,
+Id:,cycle-workflow,,,,,,,,,
+Title:,Cycle workflow,,,,,,,,,
+Description:,Workflow pour les cycles d administration de projets de R et D,,,,,,,,,
+Initial state:,draft,,,,,,,,,
+,,,,,,,,,,
+[State],,,,,,,,,,
+Id:,draft,,,,,,,,,
+Title:,Brouillon,,,,,,,,,
+Description:,Le cycle est en cours d elaboration,,,,,,,,,
+Transitions,dir_submit,,,,,,,,,
+Permissions,Acquire,Anonymous,Authenticated,Member,Manager,Owner,Editor,Reader,Contributor,Reviewer
+View,N,,,,X,X,X,,X,X
+Access contents information,N,,,,X,X,X,,X,X
+Modify portal content,N,,,,X,X,X,,X,
+,,,,,,,,,,
+,,,,,,,,,,
+[State],,,,,,,,,,
+Id:,dir_pending,,,,,,,,,
+Title:,Attente validation direction,,,,,,,,,
+Description:,Le cycle est en cours d evaluation par les directions d ecoles,,,,,,,,,
+Worklist:,Pending review,,,,,,,,,
+Worklist label:,Cycle pending review,,,,,,,,,
+Worklist guard permission:,Review portal content,,,,,,,,,
+Script after:,ageliaco.rd.Extentions.transitionscripts.schoolDirSend,,,,,,,,,
+Transitions:,"reject, publish",,,,,,,,,
+Permissions,Acquire,Anonymous,Authenticated,Member,Manager,Owner,Editor,Reader,Contributor,Reviewer
+View,N,,,,X,X,X,,X,X
+Access contents information,N,,,,X,X,X,,X,X
+Modify portal content,N,,,,X,,,,,X
+,,,,,,,,,,
+[State],,,,,,,,,,
+Id:,dir_accepted,,,,,,,,,
+Title:,Accepte par les directions d ecole,,,,,,,,,
+Description:,Accepte par les directions d ecole,,,,,,,,,
+Transitions:,"reject, dg_submit",,,,,,,,,
+Permissions,Acquire,Anonymous,Authenticated,Member,Manager,Owner,Editor,Reader,Contributor,Reviewer
+View,N,,,,X,X,X,,X,X
+Access contents information,N,,,,X,X,X,,X,X
+Modify portal content,N,,,,X,,,,,X
+,,,,,,,,,,
+[State],,,,,,,,,,
+Id:,dg_sumitted,,,,,,,,,
+Title:,Soumission DG,,,,,,,,,
+Description:,Le cycle est accepte par la DG,,,,,,,,,
+Transitions:,"reject, dg_submit",,,,,,,,,
+Permissions,Acquire,Anonymous,Authenticated,Member,Manager,Owner,Editor,Reader,Contributor,Reviewer
+View,N,,,,X,X,X,,X,X
+Access contents information,N,,,,X,X,X,,X,X
+Modify portal content,N,,,,X,,,,,X
+,,,,,,,,,,
+[State],,,,,,,,,,
+Id:,active,,,,,,,,,
+Title:,En cours,,,,,,,,,
+Description:,Le cycle est actif,,,,,,,,,
+Transitions:,finish,,,,,,,,,
+Permissions,Acquire,Anonymous,Authenticated,Member,Manager,Owner,Editor,Reader,Contributor,Reviewer
+View,N,,,,X,X,X,,X,X
+Access contents information,N,,,,X,X,X,,X,X
+Modify portal content,N,,,,X,,,,,X
+,,,,,,,,,,
+[State],,,,,,,,,,
+Id:,over,,,,,,,,,
+Title:,Fini,,,,,,,,,
+Description:,Le cycle est fini,,,,,,,,,
+Transitions:,,,,,,,,,,
+Permissions,Acquire,Anonymous,Authenticated,Member,Manager,Owner,Editor,Reader,Contributor,Reviewer
+View,N,,,,X,X,X,,X,X
+Access contents information,N,,,,X,X,X,,X,X
+Modify portal content,N,,,,X,,,,,
+,,,,,,,,,,
+[Transition],,,,,,,,,,
+Id:,dir_submit,,,,,,,,,
+Title:,Soumettre pour validation (direction),,,,,,,,,
+Description:,Soumettre le cycle du projet pour validation,,,,,,,,,
+Target state:,dir_pending,,,,,,,,,
+Guard role:,Contributor,,,,,,,,,
+,,,,,,,,,,
+[Transition],,,,,,,,,,
+Id:,dir_accept,,,,,,,,,
+Title:,Validation (direction),,,,,,,,,
+Description:,Validation du cycle par les directions,,,,,,,,,
+Target state:,dir_accepted,,,,,,,,,
+Guard permission:,Request review,,,,,,,,,
+Script after:,ageliaco.rd.Extentions.transitionscripts.schoolDirValidate,,,,,,,,,
+,,,,,,,,,,
+[Transition],,,,,,,,,,
+Id:,dg_submit,,,,,,,,,
+Title:,Soumettre pour validation (DG),,,,,,,,,
+Description:,Soumettre le cycle du projet pour validation,,,,,,,,,
+Target state:,dg_sumitted,,,,,,,,,
+Guard permission:,Request review,,,,,,,,,
+,,,,,,,,,,
+[Transition],,,,,,,,,,
+Id:,reject,,,,,,,,,
+Title:,Rejeter,,,,,,,,,
+Description:,Rejet du cycle du projet,,,,,,,,,
+Target state:,draft,,,,,,,,,
+Guard permission:,Review portal content,,,,,,,,,
+,,,,,,,,,,
+[Transition],,,,,,,,,,
+Id:,dg_accept,,,,,,,,,
+Title:,Accepter le cycle (DG),,,,,,,,,
+Description:,Acceptation du cycle par la DG,,,,,,,,,
+Target state:,active,,,,,,,,,
+Guard permission:,Review portal content,,,,,,,,,
+,,,,,,,,,,
+[Transition],,,,,,,,,,
+Id:,finish,,,,,,,,,
+Title:,Fermer le cycle,,,,,,,,,
+Description:,Fermer le cycle,,,,,,,,,
+Target state:,over,,,,,,,,,
+Guard permission:,Review portal content,,,,,,,,,
