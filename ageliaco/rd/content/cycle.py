@@ -8,6 +8,8 @@ from plone.formwidget.contenttree import ObjPathSourceBinder
 from plone.directives import form, dexterity
 from plone.app.textfield import RichText
 from plone.app.z3cform.wysiwyg import WysiwygFieldWidget
+from plone.indexer import indexer
+
 from zope.lifecycleevent.interfaces import IObjectModifiedEvent
 from zope.schema.fieldproperty import FieldProperty
 from cycles import ICycles
@@ -253,6 +255,13 @@ class View(dexterity.DisplayForm):
         context = aq_inner(self.context)
 
         print context.keys()
+
+
+@indexer(ICycle)
+def authorsIndexer(obj):
+    return obj.contributor
+grok.global_adapter(authorsIndexer, name="authors")
+
         
 
 #     dexterity.write_permission(supervisor2='cmf.ReviewPortalContent')
@@ -339,22 +348,49 @@ class View(dexterity.DisplayForm):
 #         data.field.setTaggedValue(context.contributors[0],context.contributors[0])
 #     return list(context.contributors)
 #     
-# @grok.subscribe(ICycle, IObjectAddedEvent)
-# @grok.subscribe(ICycle, IObjectModifiedEvent)
-# def setDublin(cycle, event):
-#     print dir(event)
-#     print cycle.title
-# 
-#     #portal = getUtility(ISiteRoot)
-#     #acl_users = getToolByName(portal, 'acl_users')
-#     acl_users = getToolByName(cycle, 'acl_users')
-#     
-#     #cycle.setContributors(cycle.contributors)
-#     #cycle.setId = str(datetime.datetime.today().year)
-#     #cycle.contributors += cycle.initalcontributors
-#     print "cycle.contributor : ", cycle.contributor
-#     cycle.setContributors(cycle.contributor)
-#     
+@grok.subscribe(ICycle, IObjectAddedEvent)
+@grok.subscribe(ICycle, IObjectModifiedEvent)
+def setGroup(cycle, event):
+    print dir(event)
+    print cycle.title
+
+    #portal = getUtility(ISiteRoot)
+    #acl_users = getToolByName(portal, 'acl_users')
+    acl_users = getToolByName(cycle, 'acl_users')
+    portal_url = getToolByName(cycle, 'portal_url')
+    
+    #cycle.setContributors(cycle.contributors)
+    #cycle.setId = str(datetime.datetime.today().year)
+    #cycle.contributors += cycle.initalcontributors
+    print "cycle.contributor : ", cycle.contributor
+    #cycle.setContributors(cycle.contributor)    
+    portal = portal_url.getPortalObject()
+
+    gr = portal.portal_groups
+    parent = cycle.aq_inner
+    projet = parent.aq_parent.aq_parent
+    #projet = self.context.ac_parent
+    group_id = projet.id
+    
+    group = gr.getGroupById(group_id)
+    
+    if not group:
+        gr.addGroup(group_id)
+        group = gr.getGroupById(group_id)
+    print group.id, cycle.contributor
+    if group:
+        for member in cycle.contributor:
+            print member
+            gr.addPrincipalToGroup(member, group_id)
+    #             gtool = getToolByName(portal, "portal_groups", None)
+    #             user_groups = gtool.getGroupsByUserId(member)
+    #             print "user groups for member %s : "%member, user_groups
+    #             if group_id not in user_groups:
+    #                 print "adding group ", group_id
+    #                 gr.addPrincipalToGroup(member, group_id)
+            
+        
+    return
 #     # attribution creation - one per contributor
 #     for author in cycle.contributor:
 #     

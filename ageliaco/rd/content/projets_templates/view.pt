@@ -53,48 +53,38 @@
         <a tal:attributes="href projet/getURL"
                            tal:content="projet/Title" /></li>
 </ul>-->
-<div tal:define="all_projets view/projets;
+<div tal:define="isAnonymous here/portal_membership/isAnonymousUser;
+                 all_projets view/projets;
                  opened_projets python:view.projets('encours');
                  pending_projets python:view.projets('pending');
                  draft_projets python:view.projets('draft');
                  completed_projets python:view.projets('published');
-                 closed_projets python:view.projets('closed');
                 projet_images python:{
                     'encours': navroot + '/++resource++ageliaco.rd/WorkingFolderIcon.png',
-                    'draft': navroot + '/++resource++ageliaco.rd/WorkingFolderIcon.png',
                     'pending': navroot + '/++resource++ageliaco.rd/PrivateFolderIcon.png',
+                    'draft': navroot + '/++resource++ageliaco.rd/WorkingFolderIcon.png',
                     'published': navroot + '/++resource++ageliaco.rd/DocumentsFolderIcon.png',
                     'Tous': navroot + '/++resource++ageliaco.rd/MultiFolderIcon.png'
                 }">
 
 <div  tal:define="workflowstates_projets python:[
-                ('encours',opened_projets,u'En cours'),
-                ('pending',pending_projets,u'A valider'),
-                ('draft',draft_projets,u'Brouillon'),
-                ('published',completed_projets,u'Publié'),
-                ('closed',closed_projets,u'Fermé')]"
+                ('encours',opened_projets,u'En cours',1),
+                ('pending',pending_projets,u'A valider',0),
+                ('draft',draft_projets,u'Brouillon',0),
+                ('published',completed_projets,u'Publié',1),
+                ('Tous',all_projets,u'Tous',1)]"
                 id="local_projets">
 
 
 
     <ul class="css-tabs">
 
-        <li   class="Tous"
-                tal:define="wfstate python:'Tous';
-                    tabimg python:navroot + '/++resource++ageliaco.rd/MultiFolderIcon.png'"
-                tal:condition="python:all_projets">
-            <a  
-            tal:attributes="i18n:translate string:heading_${wfstate}"
-            href="#"><img tal:attributes="src string:${tabimg} ;
-                            alt string:${wfstate}" 
-                            style="height : 130%"/><span tal:content="string:${wfstate}"
-                                                            style="vertical-align : top"/></a></li>
-
         <tal:block repeat="workflowstate workflowstates_projets" 
-            condition="not: here/portal_membership/isAnonymousUser">
-        <li   tal:attributes="class python:workflowstate[0]" 
+            >
+        <li   tal:condition="python: workflowstate[3] or not isAnonymous"
+                tal:attributes="class python:workflowstate[0]" 
                 tal:define="wfstate python:workflowstate[0]"
-                tal:condition="python:workflowstate[1]">
+                >
             <a  
             tal:attributes="i18n:translate string:heading_${wfstate}"
             href="#"><img tal:attributes="src python:projet_images[workflowstate[0]];
@@ -105,20 +95,54 @@
     </ul>
     <div class="css-panes">
 
-        <div tal:define="review_state string:Tous" 
+        <tal:block repeat="workflowstate workflowstates_projets">
+        <div tal:define="review_state python:workflowstate[0]" 
+                tal:condition="python:workflowstate[1] and (workflowstate[3] or not isAnonymous)"
                 style="clear:left;display:block;"> 
-            <dl >
-                <tal:block repeat="projet all_projets" >  
-                    <dt>
-            <span ><span class="start_projet" tal:content="python: projet.start.year()"/>-<span class="end_projet" tal:content="python: projet.end.year()"/></span> 
+<!--
+
+<div tal:define="projets view/projets" tal:condition="projets">
+        <span tal:replace="structure python:view.render_table(projets)"></span>
+    <noscript>
+    </noscript>
+</div>
+-->
+        <table class="listing_projets">
+                <tal:loop tal:repeat="projet python:workflowstate[1]">
+                   <tr  tal:attributes="class python:oddrow and 'projet_even' or 'projet_odd'"
+                        tal:define="oddrow repeat/projet/odd;"> 
+                    <td class="projet_title">
+                        <span  class="start_projet" 
+                                tal:content="python: projet.start.year()"/>-<span class="end_projet" 
+                                tal:content="python: projet.end.year()"/>
+                        </td><td>
+                        <span style="width='100px'"> 
                         <a tal:attributes="href projet/getURL"
                            tal:content="projet/Title" />
-                    </dt>
-                    <dd />
-                </tal:block>
-            </dl>
+                        </span>
+                      </td>
+                    <td tal:define="authors python:view.authors(projet.getPath())">
+                    <table  tal:condition="authors" class="listing_auteurs">
+                    <tal:auteurs tal:repeat="author authors" >
+                    <tr>
+<!--                      <tal:block1  define="auteur python:author.getObject()">
+-->
+                      <tal:block1  define="auteur author">
+                       <td><span tal:replace="auteur/firstname"/> <span tal:replace="auteur/lastname"/></td>
+                        <td tal:condition="not: isAnonymous"
+                            tal:content="auteur/email">email</td><td tal:content="auteur/school"/>                       
+                    </tal:block1>
+                      </tr>
+                      </tal:auteurs>
+                      </table>
+                    </td>
+                </tr>
+                </tal:loop>
+            </table>
+            
+            
         </div><!-- col -->
-
+<!--
         <tal:block repeat="workflowstate workflowstates_projets">
         <div tal:define="review_state python:workflowstate[0]" 
                 tal:condition="python:workflowstate[1]"
@@ -133,7 +157,8 @@
                     <dd />
                 </tal:block>
             </dl>
-        </div><!-- col -->
+        </div>
+-->
         </tal:block>
     </div>
 </div>

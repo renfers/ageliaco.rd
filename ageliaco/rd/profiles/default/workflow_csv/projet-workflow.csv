@@ -37,7 +37,7 @@ Worklist label:,Projet pending review,,,,,,,,,
 Worklist guard permission:,Review portal content,,,,,,,,,
 Transitions:,"submit, publish",,,,,,,,,
 Permissions,Acquire,Anonymous,Authenticated,Member,Manager,Owner,Editor,Reader,Contributor,Reviewer
-View,N,,X,,X,X,X,,X,X
+View,N,X,X,,X,X,X,X,X,X
 Access contents information,N,,,X,X,X,X,,X,X
 Modify portal content,N,,,,X,X,X,,X,X
 ,,,,,,,,,,

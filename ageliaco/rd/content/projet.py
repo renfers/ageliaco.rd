@@ -183,13 +183,14 @@ from plone.directives import form, dexterity
 from zope.security import checkPermission
 
 from ageliaco.rd import _
+from auteur import IAuteur
 
 # for debug purpose => log(...)
 from Products.CMFPlone.utils import log
 
 from plone.app.textfield import RichText
 #from plone.app.z3cform.wysiwyg import WysiwygFieldWidget
-from zope.lifecycleevent.interfaces import IObjectModifiedEvent
+from zope.lifecycleevent.interfaces import IObjectModifiedEvent, IObjectRemovedEvent
 
 import datetime
 
@@ -216,6 +217,7 @@ from Products.CMFCore.utils import getToolByName
 from cycle import ICycle
 from Products.CMFCore.interfaces import IFolderish
 from zope.security import checkPermission
+from plone.namedfile.field import NamedBlobImage
 
 class ProfsVocabulary(object):
     grok.implements(IVocabularyFactory)
@@ -285,9 +287,12 @@ class IProjet(form.Schema):
             required=True,
         )
     
+    #dexterity.read_permission(num='cmf.ReviewPortalContent')
+    dexterity.write_permission(num='cmf.ReviewPortalContent')
     num = schema.Int(
             title=_(u"Numéro"),
             description=_(u"Numéro du projet"),
+            default=0,
             required=True,
         )
 
@@ -296,60 +301,55 @@ class IProjet(form.Schema):
             description=_(u"Présentation synthétique du projet (présentation publiée)"),
             required=True,
         )    
+    #form.widget(picture=plone.formwidget.namedfile)
+    picture = NamedBlobImage(
+            title=_(u"Chargez une image pour le projet"),
+            required=False,
+        )
 
-
-class View(grok.View):
-    grok.context(IProjet)
-    grok.require('zope2.View')
+# class Projet(object):
+#     grok.implements(IProjet)
+#     
+#     start = u""
+#     duration = 1
+#     num = 0
+#     presentation = u""
+#     author_group = u""
+#     picture = None
+#     
+#     def setGroup(self):
+#         print "=== Group creation ==="
+#         acl_users = getToolByName(projet, 'acl_users')
+#         mail_host = getToolByName(projet, 'MailHost')
+#         portal_url = getToolByName(projet, 'portal_url')
+#         
+#         portal = portal_url.getPortalObject()
+#         sender = portal.getProperty('email_from_address')
+#     
+#         gr = portal.portal_groups
+#         
+#         group_id = projet.id
+#         if not group_id in gr.getGroupIds():
+#             gr.addGroup(group_id)
+#         
+#         for member in projet.contributor:
+#             gtool = getToolByName(portal, "portal_groups", None)
+#             user_groups = gtool.getGroupsByUserId(member)
+#             print "user groups for member %s : "%member, user_groups
+#             if group_id not in user_groups:
+#                 print "adding group ", group_id
+#                 gr.addPrincipalToGroup(member, group_id)
+#                 
+#          
+#         #Add local roles to a group
+#         if IRoleManager.providedBy(projet):
+#             print "adding roles (contributor and Editor) to ", group_id 
+#             projet.manage_addLocalRoles(group_id, ['Contributor','Editor'])
+#         
+#     
+#         return
+#         
     
-    def canRequestReview(self):
-        return checkPermission('cmf.RequestReview', self.context)
-
-    def logo_url(self):
-        context = aq_inner(self.context)
-        portal_url = getToolByName(context, 'portal_url')
-        if 'logo.png' in context.keys():
-            return context.absolute_url() + '/logo.png'
-        return portal_url + '/++resource++ageliaco.rd/screens.png'      
-
-    def noCycle(self):
-        context = aq_inner(self.context)
-        print context.id
-        admin = 'admin_' + context.id
-        if admin in context.objectIds():
-            administration = context[admin]
-            if len(administration.objectIds())>0:
-                print administration.objectIds()
-                return False
-            else:
-                return True
-        return True
-        
-    def new_cycle_url(self):
-        context = aq_inner(self.context)
-        print context.id
-        admid = 'admin_' + context.id 
-        url = context.absolute_url() + '/' + admid + '/++add++ageliaco.rd.cycle'
-        return url 
-        
-    def cycles(self):
-        """Return a catalog search result of issues to show
-        """
-        
-        context = aq_inner(self.context)
-        #catalog = getToolByName(self.context, 'portal_catalog')
-        #object = context
-        #return catalog(object_provides= ICycle.__identifier__,
-        #               path={'query': '/'.join(context.getPhysicalPath()), 'depth': 1},
-        #               sort_on="modified", sort_order="reverse")        
-        print context.id
-        admin = 'admin_' + context.id
-        if admin in context.objectIds():
-            administration = context[admin]
-            for cycle in administration.objectValues():
-                print cycle.title_or_id()
-            return administration.objectValues()
-        return []
 
 @indexer(IProjet)
 def startIndexer(obj):
@@ -367,7 +367,36 @@ def endIndexer(obj):
     return DateTime(adate.isoformat())
 grok.global_adapter(endIndexer, name="end")
 
+@indexer(IProjet)
+def numIndexer(obj):
+    if hasattr(obj,'num'):
+        return obj.num
+    return None
+grok.global_adapter(numIndexer, name="num")
 
+@indexer(IProjet)
+def cycleIndexer(obj):
+    admin = 'admin_' + obj.id
+    if admin in obj.objectIds():
+        administration = obj[admin]
+        ret = []
+        for cycle in administration.objectValues():
+            if cycle.portal_type == 'ageliaco.rd.cycle':
+                ret.append(cycle.id)
+        return ret
+grok.global_adapter(cycleIndexer, name="cycles")
+
+@indexer(IProjet)
+def authorsIndexer(obj):
+    admin = 'admin_' + obj.id
+    if admin in obj.objectIds():
+        administration = obj[admin]
+        ret = []
+        for auteur in administration.objectValues():
+            if auteur.portal_type == 'ageliaco.rd.auteur':
+                ret.append(auteur.id)
+        return ret
+grok.global_adapter(authorsIndexer, name="authors")
 
 @form.default_value(field=IProjet['start'])
 def startDefaultValue(data):
@@ -386,40 +415,69 @@ def presentationDefaultValue(data):
             raw=canvas
             )
 
-# @grok.subscribe(IProjet, IObjectAddedEvent)
-# @grok.subscribe(IProjet, IObjectModifiedEvent)
-# def createGroup(projet, event):
-#     print "=== Group creation ==="
-#     acl_users = getToolByName(projet, 'acl_users')
-#     mail_host = getToolByName(projet, 'MailHost')
-#     portal_url = getToolByName(projet, 'portal_url')
-#     
-#     portal = portal_url.getPortalObject()
-#     sender = portal.getProperty('email_from_address')
-# 
-#     gr = portal.portal_groups
-#     
-#     group_id = projet.id
-#     if not group_id in gr.getGroupIds():
-#         gr.addGroup(group_id)
-#     
-#     for member in projet.contributor:
-#         gtool = getToolByName(portal, "portal_groups", None)
-#         user_groups = gtool.getGroupsByUserId(member)
-#         print "user groups for member %s : "%member, user_groups
-#         if group_id not in user_groups:
-#             print "adding group ", group_id
-#             gr.addPrincipalToGroup(member, group_id)
-#             
-#      
-#     #Add local roles to a group
-#     if IRoleManager.providedBy(projet):
-#         print "adding roles (contributor and Editor) to ", group_id 
-#         projet.manage_addLocalRoles(group_id, ['Contributor','Editor'])
-#     
-# 
-#     return
+ 
+@grok.subscribe(IProjet, IObjectRemovedEvent)
+@grok.subscribe(IProjet, IObjectRemovedEvent)
+def removeGroup(projet, event):
+    acl_users = getToolByName(projet, 'acl_users')
+    mail_host = getToolByName(projet, 'MailHost')
+    portal_url = getToolByName(projet, 'portal_url')
     
+    portal = portal_url.getPortalObject()
+    sender = portal.getProperty('email_from_address')
+
+    gr = portal.portal_groups
+    
+    group_id = projet.id
+    if group_id in gr.getGroupIds():
+        gr.removeGroup(group_id)
+        log("Group %s removed"%group_id)
+    return
+    
+
+@grok.subscribe(IProjet, IObjectAddedEvent)
+@grok.subscribe(IProjet, IObjectModifiedEvent)
+def createGroup(projet, event):
+    acl_users = getToolByName(projet, 'acl_users')
+    mail_host = getToolByName(projet, 'MailHost')
+    portal_url = getToolByName(projet, 'portal_url')
+    catalog = getToolByName(projet, 'portal_catalog')
+    
+    portal = portal_url.getPortalObject()
+    gr = portal.portal_groups
+    
+    group_id = projet.id
+    log("=== Group creation ===> " + group_id)
+    
+    group = gr.getGroupById(group_id)
+    if not group:
+        gr.addGroup(group_id)
+        group = gr.getGroupById(group_id)
+    
+    admid = 'admin_%s'%projet.id
+    adm = projet[admid]
+    projectPath = projet.absolute_url()
+    #members = adm.objectIds(['ageliaco.rd.auteur']) => filter ne marche pas avec Dexterity
+    members = adm.objectValues() #=> filtre sur le type ne marche pas avec Dexterity
+    for member in members:
+        if member.portal_type == 'ageliaco.rd.auteur':
+            gr.addPrincipalToGroup(member.id, group_id)
+    #         gtool = getToolByName(portal, "portal_groups", None)
+    #         user_groups = gtool.getGroupsByUserId(member)
+    #         print "user groups for member %s : "%member, user_groups
+    #         if group_id not in user_groups:
+    #             print "adding group ", group_id
+    #             gr.addPrincipalToGroup(member.id, group_id)
+            
+     
+    #Add local roles to a group
+    if IRoleManager.providedBy(projet):
+        log("adding roles (contributor and Editor) to " + group_id) 
+        projet.manage_addLocalRoles(group_id, ['Contributor','Editor'])
+    
+
+    return
+
 @grok.subscribe(IProjet, IObjectAddedEvent)
 def setCycles(projet, event):
     admid = 'admin_%s'%projet.id
@@ -429,10 +487,8 @@ def setCycles(projet, event):
         projet.invokeFactory("ageliaco.rd.cycles", id=admid, title='Administration')
         cycles = projet[admid]
     
-    #projet.setContributors(projet.contributor)
-    #request.response.redirect(cycles.absolute_url() + '++add++ageliaco.rd.cycle')
-    return #request.response.redirect(cycles.absolute_url() + '++add++ageliaco.rd.cycle')
-
+    return 
+    
 @grok.subscribe(IProjet, IObjectAddedEvent)
 def setRealisation(projet, event):
     admid = 'realisation'
@@ -449,13 +505,51 @@ def setRealisation(projet, event):
 
 class View(grok.View):
     grok.context(IProjet)
-    grok.require('zope2.View')    
-    #template = grok.PageTemplateFile('projet_templates/view.pt')
-
+    grok.require('zope2.View')
     
     def canRequestReview(self):
         return checkPermission('cmf.RequestReview', self.context)
+
+    def logo_url(self):
+        context = aq_inner(self.context)
+        portal_url = getToolByName(context, 'portal_url')
+        if 'logo.png' in context.keys():
+            return context.absolute_url() + '/logo.png'
+        return portal_url + '/++resource++ageliaco.rd/screens.png'      
+
+    def noCycle(self):
+        context = aq_inner(self.context)
+        admin = 'admin_' + context.id
+        if admin in context.objectIds():
+            administration = context[admin]
+            if len(administration.objectIds())>0:
+                return False
+            else:
+                return True
+        return True
         
+    def new_cycle_url(self):
+        context = aq_inner(self.context)
+        admid = 'admin_' + context.id 
+        url = context.absolute_url() + '/' + admid + '/++add++ageliaco.rd.cycle'
+        return url 
+        
+    def cycles(self):
+        """Return a catalog search result of issues to show
+        """
+        
+        context = aq_inner(self.context)
+        #catalog = getToolByName(self.context, 'portal_catalog')
+        #object = context
+        #return catalog(object_provides= ICycle.__identifier__,
+        #               path={'query': '/'.join(context.getPhysicalPath()), 'depth': 1},
+        #               sort_on="modified", sort_order="reverse")        
+        admin = 'admin_' + context.id
+        if admin in context.objectIds():
+            administration = context[admin]
+            return administration.objectValues()
+        return []
+
     def canAddContent(self):
         return checkPermission('cmf.AddPortalContent', self.context)
         
@@ -468,10 +562,8 @@ class View(grok.View):
         context = aq_inner(self.context)
         l = []
         for id, objet in context.contentItems():
-            print id, object
             if id=='admin_' + context.id :
                 for i, obj in objet.contentItems():
-                    print obj.portal_type
                     if obj.portal_type == 'ageliaco.rd.cycle':
                         l.append(obj)
         
@@ -497,20 +589,20 @@ class View(grok.View):
         
     
 
-    def cycles(self):
-        #return a list with all the cycles for this projet
-        context = aq_inner(self.context)
-        catalog = getToolByName(self.context, 'portal_catalog')
-        try:
-            objet = context['admin_' + context.id]
-            return catalog(object_provides= ICycle.__identifier__,
-                           path={'query': object.absolute_url(), 'depth': 1},
-                           sort_on="modified", sort_order="reverse")        
-            
-        except:
-            return []
-        #log( 'cycle : ' + object.getPath())
-        #log( wf_state + " state chosen")
+#     def cycles(self):
+#         #return a list with all the cycles for this projet
+#         context = aq_inner(self.context)
+#         catalog = getToolByName(self.context, 'portal_catalog')
+#         try:
+#             objet = context['admin_' + context.id]
+#             return catalog(object_provides= ICycle.__identifier__,
+#                            path={'query': object.absolute_url(), 'depth': 1},
+#                            sort_on="modified", sort_order="reverse")        
+#             
+#         except:
+#             return []
+#         #log( 'cycle : ' + object.getPath())
+#         #log( wf_state + " state chosen")
 
 # class AddForm(dexterity.AddForm):
 #     grok.name('ageliaco.rd.projet')

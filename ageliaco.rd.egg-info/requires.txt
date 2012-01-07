@@ -5,4 +5,6 @@ Plone
 plone.principalsource
 plone.app.users >= 1.0b7
 collective.wtf
+plone.namedfile[blobs]
+plone.formwidget.namedfile
 ageliaco.p10userdata

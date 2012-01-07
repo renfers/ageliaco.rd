@@ -46,7 +46,7 @@
                 tal:condition="python:context.has_key(realisation) and not len(context[realisation])"                   
             >
             <a tal:define="rea python:context['realisation']"
-               tal:condition="python: view.canAddContent() or view.canReviewContent()"                
+               tal:condition="python: view.canAddContent() or view.canRequestReview()"                
                tal:attributes="href python:context.absolute_url() + '/realisation'"
                tal:content="rea/Title"
             style="float : right">
@@ -79,11 +79,20 @@
 
 		<p class="documentDescription" 
 		    tal:content="context/description" />
+        <div tal:define="picture nocall:context/picture"
+             tal:condition="nocall:picture">
+            <img tal:attributes="src string:${context/absolute_url}/@@download/picture/${picture/filename};
+                                 height picture/_height | nothing;
+                                 width picture/_width | nothing;"
+                style="float:left;margin:0 30px 30px 0;"
+                />
+        </div>		    
+<!--
 		<img tal:condition="has_logo" tal:attributes="src  python:context['logo-projet.png'].absolute_url()  or  navroot + '/++resource++ageliaco.rd/screens.png'" 
 		    src="http://static.flowplayer.org/img/title/screens.png" alt="Flying screens" style="float:left;margin:0 30px 30px 0; width : 200px" />
 		<img tal:condition="not:has_logo" tal:attributes="src  python:navroot + '/++resource++ageliaco.rd/screens.png'" 
 		    src="http://static.flowplayer.org/img/title/screens.png" alt="Flying screens" style="float:left;margin:0 30px 30px 0; width : 200px" />
-
+-->
         <span tal:content="structure context/presentation/output" />
         
         <span class="discreet">

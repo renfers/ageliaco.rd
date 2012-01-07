@@ -119,17 +119,27 @@
   color   : black;
 }
 
-.projet_odd {
-  background : #FFFFC1
-	margin:0; 
-	padding:0;
+/*
+.projet_odd, tr.projet_odd {
+    background : #C1C1C1;
+	border  :   5px yellow; 
+	margin  :   5px; 
+	padding :   10px;
 }
 
 .projet_even {
-  background : #FFFFFF
-	margin:0; 
-	padding:0;
+  background : #FFFFFF;
+	margin:5; 
+	padding:10;
 }
+
+.listing_projets {
+	margin  :   5px; 
+	margin  :   5px; 
+	border  :   5px; 
+	padding :   10px;
+}
+*/
 
 #all_projets dl{ 
 	margin: 0 0 0 0; 
@@ -350,6 +360,10 @@ ul.css-tabs a {
 	top:1px;	
 	outline:0;
 	-moz-border-radius:4px 4px 0 0;	
+    -webkit-border-radius: 4px 4px 0 0;
+    -khtml-border-radius: 4px 4px 0 0;
+    border-radius: 4px 4px 0 0;
+
 }
 
 ul.css-tabs a:hover {
@@ -420,4 +434,52 @@ ul.css-tabs a.current {
 	font-size:16px;
 	color:#999;
 	padding:15px;
+}
+
+/* 
+	Web20 Table Style
+	written by Netway Media, http://www.netway-media.com
+*/
+.listing_projets, .listing_auteurs {
+  border-collapse: collapse;
+  border-bottom : 2px solid #CCCCCC;
+  border-right : 2px solid #CCCCCC;
+  border-left : 1px solid #DDDDDD;
+  font: normal 11px verdana, arial, helvetica, sans-serif;
+  color: #363636;
+  background: #f6f6f6;
+  text-align:left;
+    -moz-border-radius:4px;	
+    -webkit-border-radius: 4px;
+    -khtml-border-radius: 4px;
+    border-radius: 4px;
+  }
+caption {
+  text-align: center;
+  font: bold 16px arial, helvetica, sans-serif;
+  background: transparent;
+  padding:6px 4px 8px 0px;
+  color: #CC00FF;
+  text-transform: uppercase;
+}
+thead, tfoot {
+background:url(bg1.png) repeat-x;
+text-align:left;
+height:30px;
+}
+thead th, tfoot th {
+padding:5px;
+}
+table a {
+color: #333333;
+text-decoration:none;
+}
+table a:hover {
+text-decoration:underline;
+}
+tr.projet_odd {
+background: #f1f1f1;
+}
+tbody th, tbody td {
+padding:5px;
 }

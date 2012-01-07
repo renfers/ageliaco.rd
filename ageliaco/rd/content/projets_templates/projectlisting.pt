@@ -1,0 +1,45 @@
+coucou                
+                
+<span  class="listing_projets"  i18n:domain="ageliaco.rd"
+                tal:define="all_options options, all_projets options/projets">
+                <span tal:content="options"/>
+                <ul>
+                <tal:block repeat="option all_options">
+                <li>option : <span tal:content="option"/></li>
+                </tal:block>
+                </ul>
+                
+                </span>
+<!-- 
+                
+       <table class="listing_projets"  i18n:domain="ageliaco.rd"
+                tal:define="all_projets options/projets">
+                <tal:loop tal:repeat="projet all_projets">
+                   <tr  tal:attributes="class python:oddrow and 'projet_even' or 'projet_odd'"
+                        tal:define="oddrow repeat/projet/odd;"> 
+                    <td class="projet_title">
+                        <span  class="start_projet" 
+                                tal:content="python: projet.start.year()"/>-<span class="end_projet" 
+                                tal:content="python: projet.end.year()"/>
+                        </td><td>
+                        <span style="width='100px'"> 
+                        <a tal:attributes="href projet/getURL"
+                           tal:content="projet/Title" />
+                        </span>
+                      </td>
+                    <td tal:define="authors python:view.authors(projet.getPath())">
+                    <table  tal:condition="authors">
+                    <tal:auteurs tal:repeat="author authors" >
+                    <tr>
+                      <tal:block1  define="auteur python:author.getObject()">
+                       <td><span tal:replace="auteur/firstname"/> <span tal:replace="auteur/lastname"/></td>
+                            <td tal:content="auteur/school"/>                       
+                    </tal:block1>
+                      </tr>
+                      </tal:auteurs>
+                      </table>
+                    </td>
+                </tr>
+                </tal:loop>
+            </table>
+-->

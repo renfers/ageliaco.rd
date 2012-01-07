@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import os
 
-version = '0.2.5'
+version = '0.2.6'
 
 setup(name='ageliaco.rd',
       version=version,
@@ -32,6 +32,8 @@ setup(name='ageliaco.rd',
           'plone.principalsource',
           'plone.app.users >= 1.0b7',
           'collective.wtf',
+          'plone.namedfile[blobs]',
+          'plone.formwidget.namedfile',
           'ageliaco.p10userdata',
       ],
       entry_points="""

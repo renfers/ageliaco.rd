@@ -87,6 +87,12 @@ class IAuteur(form.Schema):
             required=True,
         )
 
+    phone = schema.TextLine(
+            title=_(u"Téléphone"),
+            description=_(u"Téléphone"),
+            required=False,
+        )
+
 
     
 @grok.subscribe(IAuteur, IObjectAddedEvent)
@@ -103,8 +109,9 @@ def setAuteur(auteur, event):
         auteur.email = user.getProperty('email') or ''
         auteur.firstname = user.getProperty('firstname') or ''
         auteur.lastname = user.getProperty('lastname') or ''
-        schools = user.getProperty('school')
-        print schools
+        auteur.school = user.getProperty('school')
+        schools = auteur.school
+        print "Ecoles : " + schools
         if schools in [list,tuple] and len(schools) > 0 : auteur.school = schools[0]
         print "auteur : %s %s, %s, %s" % (auteur.firstname, auteur.lastname, auteur.email, auteur.school)
         
